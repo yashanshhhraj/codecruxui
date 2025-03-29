@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendor Dashboard - Available Waste</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="vendor-styles.css">
+  <link rel="stylesheet" href="css/vendorStyles.css">
+</head>
+<body>
+  <div class="vendor-dashboard">
+    <header class="dashboard-header">
+      <h1><i class="fas fa-trash-alt"></i> Available Waste Reports</h1>
+      <div class="header-actions">
+        <div class="filter-controls">
+          <select id="wasteTypeFilter">
+            <option value="all">All Types</option>
+            <option value="plastic">Plastic</option>
+            <option value="paper">Paper</option>
+            <option value="metal">Metal</option>
+            <option value="glass">Glass</option>
+            <option value="organic">Organic</option>
+          </select>
+          <button id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-value" id="totalReports">1</div>
+        <div class="stat-label">Total Available</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="selectedCount">0</div>
+        <div class="stat-label">Selected Items</div>
+      </div>
+    </div>
+
+    <main class="waste-reports-container">
+      <div class="waste-reports-grid" id="reportsGrid">
+        <!-- Reports will be loaded here -->
+      </div>
+    </main>
+
+    <div class="action-bar">
+      <button id="selectAllBtn"><i class="fas fa-check-square"></i> Select All</button>
+      <button id="collectSelectedBtn" disabled><i class="fas fa-truck"></i> Collect Selected</button>
+    </div>
+  </div>
+
+  <script src="vendor-script.js"></script>
+</body>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+  // Mock data - replace with actual API call
+  const mockResponse = {
+    "statusCode": 200,
+    "data": [
+      {
+        "coordinates": {
+          "type": "Point",
+          "coordinates": [75.923173, 26.933167]
+        },
+        "_id": "67e7f7b35965c1f748b75e3e",
+        "reportedBy": {
+          "_id": "67e515627ce99684f6fb0665",
+          "fullName": "pawan Kumar",
+          "phoneNo": "934923982"
+        },
+        "photoUrl": [
+          "http://res.cloudinary.com/doqoexuer/image/upload/v1743255474/knbpxv7d2oxhehetym5h.jpg"
+        ],
+        "status": "useful",
+        "createdAt": "2025-03-29T13:37:55.012Z",
+        "__v": 0,
+        "mlIdentifiedType": "plastic",
+        "userReportedType": "plastic"
+      }
+    ],
+    "message": "Available waste reports fetched successfully",
+    "success": true
+  };
+
+  // DOM elements
+  const reportsGrid = document.getElementById('reportsGrid');
+  const totalReportsEl = document.getElementById('totalReports');
+  const selectedCountEl = document.getElementById('selectedCount');
+  const selectAllBtn = document.getElementById('selectAllBtn');
+  const collectSelectedBtn = document.getElementById('collectSelectedBtn');
+  const wasteTypeFilter = document.getElementById('wasteTypeFilter');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  let selectedReports = [];
+  let allReports = [];
+
+  // Initialize dashboard
+  function initDashboard() {
+    fetchAvailableWaste();
+  }
+
+  // Fetch available waste reports
+  function fetchAvailableWaste() {
+    // In real implementation, this would be an API call:
+    // fetch('your-api-endpoint')
+    //   .then(response => response.json())
+    //   .then(data => {
+    //     if (data.success) {
+    //       allReports = data.data;
+    //       renderReports(allReports);
+    //     }
+    //   });
+    
+    // For demo, using mock data:
+    allReports = mockResponse.data;
+    renderReports(allReports);
+  }
+
+  // Render reports to the grid
+  function renderReports(reports) {
+    reportsGrid.innerHTML = '';
+    totalReportsEl.textContent = reports.length;
+    selectedReports = [];
+    updateSelectedCount();
+
+    if (reports.length === 0) {
+      reportsGrid.innerHTML = '<div class="no-reports">No waste reports available</div>';
+      return;
+    }
+
+    reports.forEach(report => {
+      const reportCard = document.createElement('div');
+      reportCard.className = 'waste-report-card';
+      reportCard.dataset.id = report._id;
+      reportCard.dataset.type = report.userReportedType;
+
+      const reportDate = new Date(report.createdAt);
+      const formattedDate = reportDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      reportCard.innerHTML = `
+        <input type="checkbox" class="select-checkbox" id="select-${report._id}">
+        <img src="${report.photoUrl[0]}" alt="Waste photo" class="report-image">
+        <div class="report-details">
+          <div class="report-header">
+            <span class="report-type">${report.userReportedType}</span>
+            <span class="report-status">${report.status}</span>
+          </div>
+          <div class="report-meta">
+            <div class="report-meta-item">
+              <i class="fas fa-weight-hanging"></i>
+              <span>Identified as: ${report.mlIdentifiedType}</span>
+            </div>
+            <div class="report-meta-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>${report.coordinates.coordinates[1].toFixed(6)}, ${report.coordinates.coordinates[0].toFixed(6)}</span>
+            </div>
+          </div>
+          <div class="reporter-info">
+            <i class="fas fa-user"></i>
+            <span>${report.reportedBy.fullName}</span>
+            <i class="fas fa-phone" style="margin-left: 10px;"></i>
+            <span>${report.reportedBy.phoneNo}</span>
+          </div>
+          <div class="report-date">Reported on ${formattedDate}</div>
+        </div>
+      `;
+
+      const checkbox = reportCard.querySelector('.select-checkbox');
+      checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          selectedReports.push(report._id);
+        } else {
+          selectedReports = selectedReports.filter(id => id !== report._id);
+        }
+        updateSelectedCount();
+      });
+
+      reportsGrid.appendChild(reportCard);
+    });
+  }
+
+  // Update selected count display
+  function updateSelectedCount() {
+    selectedCountEl.textContent = selectedReports.length;
+    collectSelectedBtn.disabled = selectedReports.length === 0;
+  }
+
+  // Select all reports
+  selectAllBtn.addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('.select-checkbox');
+    if (selectedReports.length === allReports.length) {
+      // Deselect all
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      selectedReports = [];
+    } else {
+      // Select all
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        const reportId = checkbox.id.replace('select-', '');
+        if (!selectedReports.includes(reportId)) {
+          selectedReports.push(reportId);
+        }
+      });
+    }
+    updateSelectedCount();
+  });
+
+  // Collect selected reports
+  collectSelectedBtn.addEventListener('click', function() {
+    if (selectedReports.length === 0) return;
+    
+    // In real implementation, this would call your API:
+    // fetch('/api/vendor/collect_waste', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     'Authorization': 'Bearer ' + localStorage.getItem('token')
+    //   },
+    //   body: JSON.stringify({ reportIds: selectedReports })
+    // })
+    // .then(response => response.json())
+    // .then(data => {
+    //   if (data.success) {
+    //     alert('Selected waste marked as collected!');
+    //     fetchAvailableWaste();
+    //   }
+    // });
+    
+    alert(`Marking ${selectedReports.length} waste reports as collected...`);
+    // Simulate API call
+    setTimeout(() => {
+      fetchAvailableWaste();
+    }, 1000);
+  });
+
+  // Filter by waste type
+  wasteTypeFilter.addEventListener('change', function() {
+    const type = this.value;
+    if (type === 'all') {
+      renderReports(allReports);
+    } else {
+      const filtered = allReports.filter(report => report.userReportedType === type);
+      renderReports(filtered);
+    }
+  });
+
+  // Refresh button
+  refreshBtn.addEventListener('click', fetchAvailableWaste);
+
+  // Initialize the dashboard
+  initDashboard();
+});
+</script>
+</html>
