@@ -1,0 +1,115 @@
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* Header */
+.header {
+    background-color: #0288d1;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Stats Section */
+.stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    flex: 1;
+    text-align: center;
+    padding: 15px;
+    background-color: #e3f2fd;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.stat-box p {
+    font-size: 24px;
+    color: #0288d1;
+    margin-top: 5px;
+}
+
+/* Reports Section */
+.reports {
+    margin-top: 20px;
+}
+
+.report-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.report-card {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.report-card img {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-right: 15px;
+}
+
+.report-info {
+    flex-grow: 1;
+}
+
+.report-info h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.report-info p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Status Badge */
+.status {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.admin_approved {
+    background-color: #4caf50;
+    color: white;
+}
+
+.collector_assigned {
+    background-color: #ff9800;
+    color: white;
+}
+
+.useful {
+    background-color: #0288d1;
+    color: white;
+}
