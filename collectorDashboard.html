@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collector Dashboard | CleanCity</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Leaflet CSS for maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/collectorDashboard.css">
+  
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-recycle"></i> CleanCity</h2>
+      </div>
+      <nav class="nav-menu">
+        <div class="nav-item active">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-map-marked-alt"></i>
+          <span>Collection Map</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-history"></i>
+          <span>Collection History</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="content-header">
+        <h1>Collector Dashboard</h1>
+        <div class="user-profile">
+          <div class="user-avatar">WC</div>
+          <div class="user-info">
+            <span class="user-name">Waste Collector</span>
+            <span class="user-role">Collector</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Stats Cards -->
+      <div class="stats-container">
+        <div class="stat-card">
+          <h3>Total Assigned</h3>
+          <div class="stat-value" id="totalAssigned">1</div>
+        </div>
+        <div class="stat-card">
+          <h3>Pending Pickups</h3>
+          <div class="stat-value" id="pendingPickups">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Completed Pickups</h3>
+          <div class="stat-value" id="completedPickups">1</div>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div class="map-container">
+        <div id="collectionMap"></div>
+        <div class="map-controls">
+          <button class="map-btn" id="locateMeBtn">
+            <i class="fas fa-location-arrow"></i> Locate Me
+          </button>
+          <button class="map-btn" id="refreshMapBtn">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent Pickups Section -->
+      <section class="pickups-section">
+        <div class="section-header">
+          <h2>Recent Pickups</h2>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Waste Report ID</th>
+              <th>Vendor ID</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pickupsTableBody">
+            <tr>
+              <td>67e52054ea5dc6d77a2d6236</td>
+              <td>67e51c4f8df6017b99a2adbb</td>
+              <td>67e51b1d08b896f5a737370d</td>
+              <td><span class="status-badge status-completed">completed</span></td>
+              <td>March 27, 2025</td>
+              <td>
+                <button class="action-btn" title="View Details">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn" title="Update Status" disabled>
+                  <i class="fas fa-check-circle"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <!-- Status Update Overlay -->
+  <div class="overlay" id="statusOverlay">
+    <div class="overlay-content">
+      <button class="close-overlay" id="closeOverlay">&times;</button>
+      <h2>Update Collection Status</h2>
+      <form id="statusForm">
+        <div class="form-group">
+          <label for="requestId">Request ID</label>
+          <input type="text" id="requestId" name="requestId" readonly>
+        </div>
+        <div class="form-group">
+          <label for="latitude">Latitude</label>
+          <input type="text" id="latitude" name="latitude" readonly>
+        </div>
+        <div class="form-group">
+          <label for="longitude">Longitude</label>
+          <input type="text" id="longitude" name="longitude" readonly>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <div style="padding: 10px; background-color: #d4edda; border-radius: 5px;">
+            Mark as Collected
+          </div>
+        </div>
+        <button type="submit" class="submit-btn">
+          <i class="fas fa-check"></i> Confirm Collection
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Leaflet JS for maps -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    // Sample API response data
+    const dashboardData = {
+      "statusCode": 200,
+      "data": {
+        "totalAssigned": 1,
+        "pendingPickups": 0,
+        "completedPickups": 1,
+        "recentPickups": [
+          {
+            "_id": "67e52054ea5dc6d77a2d6236",
+            "wasteReport": "67e51c4f8df6017b99a2adbb",
+            "vendor": "67e51b1d08b896f5a737370d",
+            "status": "completed",
+            "createdAt": "2025-03-27T09:54:28.228Z",
+            "__v": 0,
+            "collector": "67e51eff9587fa493b4c046d"
+          }
+        ]
+      },
+      "message": "Dashboard data fetched successfully",
+      "success": true
+    };
+
+    // Map variables
+    let map;
+    let userMarker;
+    let wasteLocationMarker;
+    let watchId;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize dashboard with API data
+      initDashboard();
+      
+      // Initialize map
+      initMap();
+      
+      // Set up event listeners
+      setupEventListeners();
+    });
+
+    function initDashboard() {
+      // Update stats
+      document.getElementById('totalAssigned').textContent = dashboardData.data.totalAssigned;
+      document.getElementById('pendingPickups').textContent = dashboardData.data.pendingPickups;
+      document.getElementById('completedPickups').textContent = dashboardData.data.completedPickups;
+
+      // In a real implementation, you would dynamically generate the table rows
+      // based on the API data
+    }
+
+    function initMap() {
+      // Initialize map centered on default location
+      map = L.map('collectionMap').setView([23.42323, 79.3434], 13);
+
+      // Add tile layer (OpenStreetMap)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      // Add waste location marker
+      wasteLocationMarker = L.marker([23.42323, 79.3434], {
+        icon: L.divIcon({
+          className: 'waste-marker',
+          html: '<i class="fas fa-trash" style="color: #e74c3c; font-size: 24px;"></i>',
+          iconSize: [30, 30],
+          iconAnchor: [15, 30]
+        })
+      }).addTo(map)
+        .bindPopup('Waste Collection Point<br>Report ID: 67e51c4f8df6017b99a2adbb');
+
+      // Start tracking user's location
+      locateUser();
+    }
+
+    function locateUser() {
+      if (navigator.geolocation) {
+        // Stop any previous watcher
+        if (watchId) {
+          navigator.geolocation.clearWatch(watchId);
+        }
+
+        // Watch user's position
+        watchId = navigator.geolocation.watchPosition(
+          position => {
+            const { latitude, longitude } = position.coords;
+            
+            // Update or create user marker
+            if (userMarker) {
+              userMarker.setLatLng([latitude, longitude]);
+            } else {
+              userMarker = L.marker([latitude, longitude], {
+                icon: L.divIcon({
+                  className: 'user-marker',
+                  html: '<i class="fas fa-user" style="color: #3498db; font-size: 24px;"></i>',
+                  iconSize: [30, 30],
+                  iconAnchor: [15, 30]
+                })
+              }).addTo(map)
+                .bindPopup('Your Location');
+            }
+            
+            // Center map on user's location
+            map.setView([latitude, longitude], 13);
+            
+            // Update form fields if overlay is open
+            document.getElementById('latitude').value = latitude;
+            document.getElementById('longitude').value = longitude;
+          },
+          error => {
+            console.error('Error getting location:', error);
+            alert('Could not get your location. Please enable location services.');
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 10000,
+            timeout: 5000
+          }
+        );
+      } else {
+        alert('Geolocation is not supported by your browser.');
+      }
+    }
+
+    function setupEventListeners() {
+      // Locate Me button
+      document.getElementById('locateMeBtn').addEventListener('click', locateUser);
+      
+      // Refresh Map button
+      document.getElementById('refreshMapBtn').addEventListener('click', () => {
+        map.invalidateSize();
+      });
+      
+      // Close overlay button
+      document.getElementById('closeOverlay').addEventListener('click', () => {
+        document.getElementById('statusOverlay').style.display = 'none';
+      });
+      
+      // Status form submission
+      document.getElementById('statusForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const requestId = document.getElementById('requestId').value;
+        const latitude = document.getElementById('latitude').value;
+        const longitude = document.getElementById('longitude').value;
+        
+        // In a real implementation, this would call your API
+        console.log('Marking as collected:', {
+          requestId,
+          currentLocation: [parseFloat(longitude), parseFloat(latitude)]
+        });
+        
+        // Example API call:
+        /*
+        fetch('http://localhost:5000/api/v1/collector/mark_as_collected', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            requestId: requestId,
+            currentLocation: [parseFloat(longitude), parseFloat(latitude)]
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Status updated successfully!');
+            document.getElementById('statusOverlay').style.display = 'none';
+            // Refresh dashboard data
+            // fetchDashboardData();
+          }
+        });
+        */
+        
+        // For demo purposes, just close the overlay
+        alert('Status updated successfully! (Demo)');
+        document.getElementById('statusOverlay').style.display = 'none';
+      });
+      
+      // In a real implementation, you would add click handlers to the
+      // "Update Status" buttons in the table that would:
+      // 1. Open the overlay
+      // 2. Populate the request ID
+      // 3. Update the current location fields
+    }
+
+    // Function to open status update overlay
+    function openStatusOverlay(requestId) {
+      document.getElementById('requestId').value = requestId;
+      document.getElementById('statusOverlay').style.display = 'flex';
+      
+      // Get current location to populate the form
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          document.getElementById('latitude').value = position.coords.latitude;
+          document.getElementById('longitude').value = position.coords.longitude;
+        });
+      }
+    }
+
+    // Clean up geolocation watcher when page unloads
+    window.addEventListener('beforeunload', function() {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    });
+  </script>
+</body>
+</html>
